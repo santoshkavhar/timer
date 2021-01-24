@@ -42,3 +42,31 @@ func NewTimer(duration time.Duration) (timerWithPause Timer) {
 	timerWithPause.timer = newTimerWithPause
 	return
 }
+
+// Pause stops the timer temporarily if the timer was running
+// and it returns the elapsed duration of timer
+// pT is simply an abbrevation for pausyTimer ;-)
+func (pT *Timer) Pause() (ElapsedDuration time.Duration, PausedSuccessfully bool) {
+	// we are fetching currentTime here itself to increase accuracy
+	currentTime := time.Now()
+	switch pT.state {
+	case running:
+		// Pause for 291.6 years
+		// timerWasActive will become false whenever timer
+		// was stopped or expired
+		timerWasActive := pT.timer.Reset(2<<61 - 1)
+		if timerWasActive {
+			pT.elapsedDuration += currentTime.Sub(pT.startTime)
+			pT.state = paused
+			return pT.elapsedDuration, true
+		}
+		// Timer was Stopped
+		pT.state = stopped
+		return pT.totalDuration, false
+	// if already paused then return elapsedTime
+	case paused:
+		return pT.elapsedDuration, false
+	}
+	// There is nothing to Pause, return Timer duration
+	return pT.totalDuration, false
+}
