@@ -111,3 +111,34 @@ func (pT *Timer) Resume() (RemainingDuration time.Duration, ResumedSuccessfully 
 	// You can't resume such a timer
 	return pT.totalDuration - pT.elapsedDuration, false
 }
+
+// Stop literally stops the timer
+// we can't resume such a timer
+func (pT *Timer) Stop() (ElapsedDuration time.Duration, StoppedSuccessfully bool) {
+	// we are fetching currentTime here itself to increase accuracy
+	currentTime := time.Now()
+
+	switch pT.state {
+	// running timer will have to stop successfully
+	case running:
+		stopWasSuccessfull := pT.timer.Stop()
+		pT.state = stopped
+		if stopWasSuccessfull {
+			pT.elapsedDuration += currentTime.Sub(pT.startTime)
+			return pT.elapsedDuration, true
+		}
+		// else
+		// There is nothing to Stop
+		// Timer didn't report its expiry
+		pT.elapsedDuration = pT.totalDuration
+		return pT.totalDuration, false
+	case paused:
+		// timer that was paused will always stop Except when expired
+		// that expiration is after 291 years, so no worries
+		pT.timer.Stop()
+		pT.state = stopped
+		return pT.elapsedDuration, true
+	}
+	// if already stopped then return elapsedTime and false
+	return pT.elapsedDuration, false
+}
