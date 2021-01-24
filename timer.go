@@ -70,3 +70,44 @@ func (pT *Timer) Pause() (ElapsedDuration time.Duration, PausedSuccessfully bool
 	// There is nothing to Pause, return Timer duration
 	return pT.totalDuration, false
 }
+
+// Resume returns the remaining Duration,
+// and if the timer was resumed successfully.
+func (pT *Timer) Resume() (RemainingDuration time.Duration, ResumedSuccessfully bool) {
+	// we are fetching currentTime here itself to increase accuracy
+	currentTime := time.Now()
+
+	switch pT.state {
+	// Timer is already running, there is nothing to resume
+	// return remaining duration and false for resumed
+	case running:
+		// if timer has completed its run but hasn't reported its stoppage
+		if currentTime.Sub(pT.startTime) > pT.totalDuration {
+			// TODO : Handle this situation more gracefully
+			pT.state = stopped
+			pT.elapsedDuration = pT.totalDuration
+			return 0, false
+		}
+		// if the timer is still running
+		return pT.totalDuration - currentTime.Sub(pT.startTime), false
+
+	// if the timer was paused then
+	case paused:
+		resetWasSuccessful := pT.timer.Reset(pT.totalDuration - pT.elapsedDuration)
+		// timer was expired but it didn't report
+		// Just create a new timer and replace the old one
+		if !resetWasSuccessful {
+			newTimerWithPause := time.NewTimer(pT.totalDuration - pT.elapsedDuration)
+			pT.timer = newTimerWithPause
+		}
+		// both these field setting is common despite of
+		// whether timer was reset Successfully or not
+		pT.startTime = time.Now()
+		pT.state = running
+		return pT.totalDuration - pT.elapsedDuration, true
+	}
+	// Only option remaining is that the timer had stopped
+	// we return what duration more it could have run ,i.e Remaining Duration
+	// You can't resume such a timer
+	return pT.totalDuration - pT.elapsedDuration, false
+}
