@@ -4,8 +4,8 @@ import (
 	"time"
 )
 
-// PausyInterface with pause, resume and stop with Durations
-type PausyInterface interface {
+// PausyTimerInterface with pause, resume and stop with Durations
+type PausyTimerInterface interface {
 	Pause() (time.Duration, bool)  // Duration Elapsed
 	Resume() (time.Duration, bool) // Duration Remaining
 	Stop() (time.Duration, bool)   // Duration Elapsed
@@ -34,7 +34,7 @@ type Timer struct {
 	state timerState
 }
 
-// NewTimer returns a timer which implements PausyInterface
+// NewTimer returns a Timer object which implements PausyTimerInterface
 func NewTimer(duration time.Duration) (timerWithPause Timer) {
 	newTimerWithPause := time.NewTimer(duration)
 	timerWithPause.startTime = time.Now()
